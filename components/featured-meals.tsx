@@ -102,11 +102,12 @@ function MealCard({ meal }: { meal: (typeof meals)[0] }) {
         <h3 className="text-xl font-bold mb-2 text-gray-800">{meal.name}</h3>
         <p className="text-gray-600 mb-3">{meal.summary}</p>
         <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-primary">Expires: {meal.expiry}</span>
+          <span className="text-sm font-medium text-orange-600">Expires: {meal.expiry}</span>
           <motion.button
-            className="px-4 py-2 bg-secondary text-white rounded-full text-sm font-medium"
+            className="px-4 py-2 bg-orange-500 hover:bg-orange-600 text-white rounded-full text-sm font-semibold transition-colors duration-200"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
+            onClick={() => alert(`Request sent for: ${meal.name}`)}
           >
             Request
           </motion.button>
