@@ -1,7 +1,10 @@
 "use client"
 
 import { motion } from "framer-motion"
-import Lottie from "lottie-react"
+import dynamic from "next/dynamic"
+
+const Lottie = dynamic(() => import("lottie-react"), { ssr: false })
+
 import foodAnimation from "../public/food-animation.json" // Make sure the path is correct
 
 export default function HeroSection() {
