@@ -37,7 +37,8 @@ export default function Navbar() {
           <NavLink href="#how-it-works">How It Works</NavLink>
           <NavLink href="#post-food">Post Food</NavLink>
           <NavLink href="#browse-meals">Browse Meals</NavLink>
-          <motion.button className="btn-primary" whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+          <motion.button className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
+ whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
             Get Started
           </motion.button>
         </nav>
