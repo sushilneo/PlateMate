@@ -4,7 +4,7 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { auth, db, storage } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, addDoc, serverTimestamp } from "firebase/firestore"
+import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 
 export default function PostMealPage() {
@@ -22,6 +22,19 @@ export default function PostMealPage() {
     freshness: "",
     image: null as File | null,
   })
+
+  // Reward points to user
+  const addPoints = async (userId: string, points: number) => {
+    const userRef = doc(db, "users", userId)
+    const userSnap = await getDoc(userRef)
+
+    if (userSnap.exists()) {
+      const currentPoints = userSnap.data().points || 0
+      await updateDoc(userRef, { points: currentPoints + points })
+    } else {
+      await setDoc(userRef, { points }) // Create if doesn't exist
+    }
+  }
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
@@ -71,8 +84,10 @@ export default function PostMealPage() {
         createdAt: serverTimestamp(),
       })
 
-      alert("Meal posted successfully! 🍽️")
-      router.push("/") // Or a success page
+      await addPoints(user.uid, 10) // 🏆 Add 10 points to user
+
+      alert("Meal posted successfully! 🍽️ You earned 10 points 🎉")
+      router.push("/")
     } catch (err: any) {
       setError(err.message || "Something went wrong.")
     } finally {
@@ -95,7 +110,6 @@ export default function PostMealPage() {
           required
           className="w-full p-3 border rounded-lg"
         />
-
         <textarea
           name="description"
           placeholder="Description"
@@ -105,7 +119,6 @@ export default function PostMealPage() {
           className="w-full p-3 border rounded-lg"
           rows={3}
         />
-
         <input
           name="location"
           placeholder="Location"
@@ -114,7 +127,6 @@ export default function PostMealPage() {
           required
           className="w-full p-3 border rounded-lg"
         />
-
         <input
           name="zipcode"
           placeholder="ZIP Code"
@@ -123,7 +135,6 @@ export default function PostMealPage() {
           required
           className="w-full p-3 border rounded-lg"
         />
-
         <input
           name="freshness"
           placeholder="Freshness (e.g., 2 hours ago)"
@@ -132,7 +143,6 @@ export default function PostMealPage() {
           required
           className="w-full p-3 border rounded-lg"
         />
-
         <input
           type="file"
           accept="image/*"
