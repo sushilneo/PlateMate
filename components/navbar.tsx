@@ -1,15 +1,24 @@
 "use client"
 
-import type React from "react"
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import Link from "next/link"
 import { motion, useScroll, useMotionValueEvent } from "framer-motion"
 import { Menu, X } from "lucide-react"
+import { auth } from "@/lib/firebase"
+import { onAuthStateChanged } from "firebase/auth"
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [hasScrolled, setHasScrolled] = useState(false)
+  const [user, setUser] = useState<any>(null)
   const { scrollY } = useScroll()
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser)
+    })
+    return () => unsubscribe()
+  }, [])
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setHasScrolled(latest > 10)
@@ -34,16 +43,24 @@ export default function Navbar() {
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-8">
           <NavLink href="#how-it-works">How It Works</NavLink>
-          <NavLink href="#post-food">Post Food</NavLink>
+          <NavLink href="/post-meal">Post Food</NavLink>
           <NavLink href="/browse-meals">Browse Meals</NavLink>
           <NavLink href="/leaderboard">Leaderboard</NavLink>
-          <motion.button
-            className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            Get Started
-          </motion.button>
+          {user ? (
+            <Link href="/account">
+              <motion.button className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                My Account
+              </motion.button>
+            </Link>
+          ) : (
+            <Link href="/auth">
+              <motion.button className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
+                whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+                Get Started
+              </motion.button>
+            </Link>
+          )}
         </nav>
 
         {/* Mobile Navigation Toggle */}
@@ -62,21 +79,13 @@ export default function Navbar() {
           transition={{ duration: 0.3 }}
         >
           <div className="container-custom py-4 flex flex-col space-y-4">
-            <MobileNavLink href="#how-it-works" onClick={() => setIsOpen(false)}>
-              How It Works
+            <MobileNavLink href="#how-it-works" onClick={() => setIsOpen(false)}>How It Works</MobileNavLink>
+            <MobileNavLink href="/post-meal" onClick={() => setIsOpen(false)}>Post Food</MobileNavLink>
+            <MobileNavLink href="/browse-meals" onClick={() => setIsOpen(false)}>Browse Meals</MobileNavLink>
+            <MobileNavLink href="/leaderboard" onClick={() => setIsOpen(false)}>Leaderboard</MobileNavLink>
+            <MobileNavLink href={user ? "/account" : "/auth"} onClick={() => setIsOpen(false)}>
+              {user ? "My Account" : "Get Started"}
             </MobileNavLink>
-            <MobileNavLink href="#post-food" onClick={() => setIsOpen(false)}>
-              Post Food
-            </MobileNavLink>
-            <MobileNavLink href="/browse-meals" onClick={() => setIsOpen(false)}>
-              Browse Meals
-            </MobileNavLink>
-            <MobileNavLink href="/leaderboard" onClick={() => setIsOpen(false)}>
-              Leaderboard
-            </MobileNavLink>
-            <Link href="#get-started" className="btn-primary text-center" onClick={() => setIsOpen(false)}>
-              Get Started
-            </Link>
           </div>
         </motion.div>
       )}
@@ -93,21 +102,9 @@ function NavLink({ href, children }: { href: string; children: React.ReactNode }
   )
 }
 
-function MobileNavLink({
-  href,
-  onClick,
-  children,
-}: {
-  href: string
-  onClick: () => void
-  children: React.ReactNode
-}) {
+function MobileNavLink({ href, onClick, children }: { href: string; onClick: () => void; children: React.ReactNode }) {
   return (
-    <Link
-      href={href}
-      className="text-gray-800 font-medium hover:text-primary transition-colors duration-300 block py-2"
-      onClick={onClick}
-    >
+    <Link href={href} className="text-gray-800 font-medium hover:text-primary transition-colors duration-300 block py-2" onClick={onClick}>
       {children}
     </Link>
   )
