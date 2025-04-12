@@ -1,5 +1,8 @@
 {
   "projects": {
-    "default": "platemate-14a41"
-  }
+    "default": "platemate-14a41",
+    "y": "platemate-14a41"
+  },
+  "targets": {},
+  "etags": {}
 }
