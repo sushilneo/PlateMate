@@ -1,25 +1,16 @@
 "use client"
 
 import type React from "react"
-import { useState, useEffect } from "react"
+
+import { useState } from "react"
 import Link from "next/link"
 import { motion, useScroll, useMotionValueEvent } from "framer-motion"
 import { Menu, X } from "lucide-react"
-import { onAuthStateChanged } from "firebase/auth"
-import { auth } from "@/lib/firebase"
 
 export default function Navbar() {
   const [isOpen, setIsOpen] = useState(false)
   const [hasScrolled, setHasScrolled] = useState(false)
-  const [user, setUser] = useState<any>(null)
   const { scrollY } = useScroll()
-
-  useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser)
-    })
-    return () => unsubscribe()
-  }, [])
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     setHasScrolled(latest > 10)
@@ -45,28 +36,11 @@ export default function Navbar() {
         <nav className="hidden md:flex items-center space-x-8">
           <NavLink href="#how-it-works">How It Works</NavLink>
           <NavLink href="#post-food">Post Food</NavLink>
-          <NavLink href="#browse-meals">Browse Meals</NavLink>
-          {user ? (
-            <Link href="/account">
-              <motion.button
-                className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                My Account
-              </motion.button>
-            </Link>
-          ) : (
-            <Link href="/auth">
-              <motion.button
-                className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                Get Started
-              </motion.button>
-            </Link>
-          )}
+          <NavLink href="/browse-meals">Browse Meals</NavLink>
+          <motion.button className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
+ whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
+            Get Started
+          </motion.button>
         </nav>
 
         {/* Mobile Navigation Toggle */}
@@ -91,15 +65,11 @@ export default function Navbar() {
             <MobileNavLink href="#post-food" onClick={() => setIsOpen(false)}>
               Post Food
             </MobileNavLink>
-            <MobileNavLink href="#browse-meals" onClick={() => setIsOpen(false)}>
+            <MobileNavLink href="/browse-meals" onClick={() => setIsOpen(false)}>
               Browse Meals
             </MobileNavLink>
-            <Link
-              href={user ? "/account" : "/auth"}
-              className="btn-primary text-center"
-              onClick={() => setIsOpen(false)}
-            >
-              {user ? "My Account" : "Get Started"}
+            <Link href="#get-started" className="btn-primary text-center" onClick={() => setIsOpen(false)}>
+              Get Started
             </Link>
           </div>
         </motion.div>

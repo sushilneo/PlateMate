@@ -3,13 +3,15 @@
 import { motion } from "framer-motion"
 import { useInView } from "framer-motion"
 import { useRef } from "react"
+import { useRouter } from "next/navigation"
 
 export default function CTASection() {
   const ref = useRef(null)
   const isInView = useInView(ref, { once: true, amount: 0.5 })
+  const router = useRouter()
 
   return (
-    <section id="post-food" className="py-16 md:py-24 bg-primary text-white">
+    <section id="post-food" className="py-16 md:py-24 bg-primary text-black">
       <div className="container-custom">
         <motion.div
           ref={ref}
@@ -24,7 +26,8 @@ export default function CTASection() {
             could be someone's perfect meal.
           </p>
           <motion.button
-            className="btn bg-white text-primary hover:bg-beige-light text-lg font-medium px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
+            onClick={() => router.push("/post-meal")}
+            className="btn bg-white text-primary hover:bg-orange-500 hover:text-white text-lg font-medium px-8 py-3 rounded-full shadow-lg hover:shadow-xl transition-all duration-300"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
