@@ -3,6 +3,6 @@
     "origin": ["https://platematee.vercel.app","http://localhost:3002"],
     "method": ["GET", "POST", "PUT"],
     "maxAgeSeconds": 3600,
-    "responseHeader": ["Content-Type", "Authorization"]
+    "responseHeader": ["Content-Type", "Authorization", "x-goog-resumable"]
   }
 ]
