@@ -4,7 +4,15 @@ import { useEffect, useState } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { auth, db } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { doc, getDoc, updateDoc, collection, addDoc, increment } from "firebase/firestore"
+import {
+  doc,
+  getDoc,
+  updateDoc,
+  collection,
+  addDoc,
+  increment,
+} from "firebase/firestore"
+import { sendMealRequestEmail } from "@/lib/sendEmail"
 
 export default function RequestMealPage() {
   const { mealId } = useParams()
@@ -14,6 +22,7 @@ export default function RequestMealPage() {
   const [loading, setLoading] = useState(true)
   const [requesting, setRequesting] = useState(false)
   const [error, setError] = useState("")
+  const [posterEmail, setPosterEmail] = useState("")
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -21,19 +30,28 @@ export default function RequestMealPage() {
         router.push("/auth")
       } else {
         setUser(currentUser)
+        if (!mealId) return
+
         const mealRef = doc(db, "meals", mealId as string)
         const mealSnap = await getDoc(mealRef)
         if (mealSnap.exists()) {
-          setMeal(mealSnap.data())
+          const mealData = mealSnap.data()
+          setMeal(mealData)
+
+          const userRef = doc(db, "users", mealData.userId)
+          const userSnap = await getDoc(userRef)
+          if (userSnap.exists()) {
+            setPosterEmail(userSnap.data().email || "")
+          }
         }
         setLoading(false)
       }
     })
     return () => unsubscribe()
-  }, [mealId])
+  }, [mealId, router])
 
   const handleRequest = async () => {
-    if (!user || !mealId) return
+    if (!user || !mealId || !meal) return
     setRequesting(true)
     setError("")
 
@@ -45,17 +63,22 @@ export default function RequestMealPage() {
         requestedAt: new Date(),
       })
 
-      // 2. Increment user points
+      // 2. Update points
       const userRef = doc(db, "users", user.uid)
       await updateDoc(userRef, {
-        points: increment(10), // 10 points per request
+        points: increment(10),
       })
 
-      alert("Request sent! You earned 10 points 🙌")
+      // 3. Send email to poster
+      if (posterEmail) {
+        await sendMealRequestEmail(posterEmail, meal.title, user.email)
+      }
+
+      alert("Request sent! The meal poster has been notified and you earned 10 points 🎉")
       router.push("/")
     } catch (err: any) {
       console.error(err)
-      setError("Something went wrong.")
+      setError("Something went wrong. Please try again.")
     } finally {
       setRequesting(false)
     }
