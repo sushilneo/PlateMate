@@ -4,7 +4,15 @@ import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { auth, db, storage } from "@/lib/firebase"
 import { onAuthStateChanged } from "firebase/auth"
-import { collection, addDoc, serverTimestamp, doc, updateDoc, getDoc } from "firebase/firestore"
+import {
+  collection,
+  addDoc,
+  serverTimestamp,
+  doc,
+  updateDoc,
+  getDoc,
+  setDoc,
+} from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
 
 export default function PostMealPage() {
@@ -23,7 +31,7 @@ export default function PostMealPage() {
     image: null as File | null,
   })
 
-  // Reward points to user
+  // ✅ Reward points to user
   const addPoints = async (userId: string, points: number) => {
     const userRef = doc(db, "users", userId)
     const userSnap = await getDoc(userRef)
@@ -32,10 +40,11 @@ export default function PostMealPage() {
       const currentPoints = userSnap.data().points || 0
       await updateDoc(userRef, { points: currentPoints + points })
     } else {
-      await setDoc(userRef, { points }) // Create if doesn't exist
+      await setDoc(userRef, { points }) // Create new user with initial points
     }
   }
 
+  // ✅ Auth check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -59,6 +68,7 @@ export default function PostMealPage() {
     }
   }
 
+  // ✅ Upload logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setUploading(true)
@@ -84,7 +94,7 @@ export default function PostMealPage() {
         createdAt: serverTimestamp(),
       })
 
-      await addPoints(user.uid, 10) // 🏆 Add 10 points to user
+      await addPoints(user.uid, 10)
 
       alert("Meal posted successfully! 🍽️ You earned 10 points 🎉")
       router.push("/")
@@ -99,7 +109,10 @@ export default function PostMealPage() {
 
   return (
     <div className="min-h-screen bg-orange-50 p-6 flex justify-center items-center">
-      <form onSubmit={handleSubmit} className="bg-white p-8 rounded-2xl shadow-md w-full max-w-xl space-y-4">
+      <form
+        onSubmit={handleSubmit}
+        className="bg-white p-8 rounded-2xl shadow-md w-full max-w-xl space-y-4"
+      >
         <h2 className="text-2xl font-bold text-center text-gray-800">Post a Meal</h2>
 
         <input
