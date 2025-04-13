@@ -14,6 +14,7 @@ import {
   setDoc,
 } from "firebase/firestore"
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage"
+import { estimateFreshness } from "@/lib/gemini"
 
 export default function PostMealPage() {
   const router = useRouter()
@@ -31,7 +32,6 @@ export default function PostMealPage() {
     image: null as File | null,
   })
 
-  // ✅ Reward points to user
   const addPoints = async (userId: string, points: number) => {
     const userRef = doc(db, "users", userId)
     const userSnap = await getDoc(userRef)
@@ -40,11 +40,10 @@ export default function PostMealPage() {
       const currentPoints = userSnap.data().points || 0
       await updateDoc(userRef, { points: currentPoints + points })
     } else {
-      await setDoc(userRef, { points }) // Create new user with initial points
+      await setDoc(userRef, { points })
     }
   }
 
-  // ✅ Auth check
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (currentUser) => {
       if (!currentUser) {
@@ -68,7 +67,6 @@ export default function PostMealPage() {
     }
   }
 
-  // ✅ Upload logic
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setUploading(true)
@@ -83,6 +81,10 @@ export default function PostMealPage() {
         imageUrl = await getDownloadURL(imageRef)
       }
 
+      // ⭐ Ask Gemini AI to estimate freshness
+      const freshnessStatus = await estimateFreshness(meal.freshness)
+
+      // 🔥 Save to Firestore
       await addDoc(collection(db, "meals"), {
         userId: user.uid,
         title: meal.title,
@@ -90,6 +92,7 @@ export default function PostMealPage() {
         location: meal.location,
         zip: meal.zipcode,
         freshness: meal.freshness,
+        freshnessStatus: freshnessStatus || "Unknown",
         imageUrl,
         createdAt: serverTimestamp(),
       })
@@ -99,6 +102,7 @@ export default function PostMealPage() {
       alert("Meal posted successfully! 🍽️ You earned 10 points 🎉")
       router.push("/")
     } catch (err: any) {
+      console.error("Post Error:", err)
       setError(err.message || "Something went wrong.")
     } finally {
       setUploading(false)
