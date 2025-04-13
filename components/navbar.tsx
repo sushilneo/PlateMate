@@ -54,7 +54,7 @@ export default function Navbar() {
               </motion.button>
             </Link>
           ) : (
-            <Link href="/auth">
+            <Link href="#cta">
               <motion.button className="text-white bg-orange-500 hover:bg-black px-6 py-3 rounded-lg font-semibold transition-colors duration-300 text-lg"
                 whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
                 Get Started

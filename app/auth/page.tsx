@@ -2,16 +2,18 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { auth } from "@/lib/firebase";
+import { auth, db } from "@/lib/firebase";
 import {
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
 } from "firebase/auth";
+import { doc, setDoc } from "firebase/firestore";
 
 export default function AuthPage() {
   const router = useRouter();
   const [isSignup, setIsSignup] = useState(false);
   const [email, setEmail] = useState("");
+  const [username, setUsername] = useState(""); // new
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -23,7 +25,13 @@ export default function AuthPage() {
 
     try {
       if (isSignup) {
-        await createUserWithEmailAndPassword(auth, email, password);
+        const userCred = await createUserWithEmailAndPassword(auth, email, password);
+        // Save extra user info (username, email)
+        await setDoc(doc(db, "users", userCred.user.uid), {
+          username,
+          email,
+          points: 0,
+        });
       } else {
         await signInWithEmailAndPassword(auth, email, password);
       }
@@ -43,6 +51,16 @@ export default function AuthPage() {
         </h2>
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {isSignup && (
+            <input
+              type="text"
+              placeholder="Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              required
+              className="w-full p-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-orange-400"
+            />
+          )}
           <input
             type="email"
             placeholder="Email"

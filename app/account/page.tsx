@@ -3,17 +3,24 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { auth, db } from "@/lib/firebase"
-import { onAuthStateChanged } from "firebase/auth"
-import { collection, doc, getDoc, getDocs, query, where } from "firebase/firestore"
+import {
+  collection,
+  doc,
+  getDoc,
+  getDocs,
+  onSnapshot,
+  query,
+  where,
+} from "firebase/firestore"
+import { onAuthStateChanged, signOut } from "firebase/auth"
 
 export default function AccountPage() {
   const router = useRouter()
   const [user, setUser] = useState<any>(null)
   const [loading, setLoading] = useState(true)
-  const [points, setPoints] = useState(0)
-  const [rank, setRank] = useState<number | null>(null)
-  const [meals, setMeals] = useState<any[]>([])
-  const [requests, setRequests] = useState<any[]>([])
+  const [userData, setUserData] = useState<any>(null)
+  const [mealsPosted, setMealsPosted] = useState<any[]>([])
+  const [mealsRequested, setMealsRequested] = useState<any[]>([])
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (currentUser) => {
@@ -21,74 +28,79 @@ export default function AccountPage() {
         router.push("/auth")
       } else {
         setUser(currentUser)
+
+        // Fetch user profile data (username, points, email)
         const userRef = doc(db, "users", currentUser.uid)
         const userSnap = await getDoc(userRef)
-        const currentUserPoints = userSnap.exists() ? userSnap.data().points || 0 : 0
-        setPoints(currentUserPoints)
+        setUserData(userSnap.data())
 
-        // Fetch all users to calculate rank
-        const allUsersSnap = await getDocs(collection(db, "users"))
-        const sorted = allUsersSnap.docs
-          .map((doc) => ({ id: doc.id, points: doc.data().points || 0 }))
-          .sort((a, b) => b.points - a.points)
+        // Fetch meals posted
+        const postedQuery = query(collection(db, "meals"), where("userId", "==", currentUser.uid))
+        const postedSnap = await getDocs(postedQuery)
+        setMealsPosted(postedSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
 
-        const userRank = sorted.findIndex((u) => u.id === currentUser.uid) + 1
-        setRank(userRank)
+        // Fetch meals requested
+        const requestQuery = query(collection(db, "requests"), where("requestedBy", "==", currentUser.uid))
+        const requestSnap = await getDocs(requestQuery)
+        setMealsRequested(requestSnap.docs.map(doc => ({ id: doc.id, ...doc.data() })))
 
-        // User's posted meals
-        const mealsQuery = query(collection(db, "meals"), where("userId", "==", currentUser.uid))
-        const mealsSnap = await getDocs(mealsQuery)
-        setMeals(mealsSnap.docs.map((doc) => ({ id: doc.id, ...doc.data() })))
-
-        // Meals requested
-        const reqQuery = query(collection(db, "requests"), where("requestedBy", "==", currentUser.uid))
-        const reqSnap = await getDocs(reqQuery)
-        setRequests(reqSnap.docs.map((doc) => doc.data()))
+        setLoading(false)
       }
-      setLoading(false)
     })
 
     return () => unsubscribe()
   }, [])
 
-  if (loading) return <p className="text-center mt-20">Loading...</p>
+  const handleLogout = async () => {
+    await signOut(auth)
+    router.push("/")
+  }
+
+  if (loading) return <p className="text-center mt-20">Loading your account...</p>
 
   return (
-    <div className="min-h-screen bg-orange-50 py-8 px-4 max-w-4xl mx-auto">
-      <h1 className="text-3xl font-bold text-center text-orange-600 mb-6">My Account</h1>
+    <div className="min-h-screen bg-orange-50 p-6 flex justify-center">
+      <div className="bg-white shadow-lg rounded-2xl p-8 w-full max-w-3xl space-y-6">
+        <h2 className="text-3xl font-bold text-gray-800 text-center mb-4">My Account</h2>
 
-      <div className="bg-white p-6 rounded-xl shadow space-y-4">
-        <p className="text-gray-800"><strong>Email:</strong> {user?.email}</p>
-        <p className="text-gray-800"><strong>Points:</strong> {points} 🏆</p>
-        {rank && <p className="text-gray-800"><strong>Leaderboard Rank:</strong> #{rank}</p>}
+        {userData && (
+          <div className="space-y-2 text-center">
+            <p><strong>Username:</strong> {userData.username || "N/A"}</p>
+            <p><strong>Email:</strong> {user.email}</p>
+            <p><strong>Points:</strong> {userData.points || 0}</p>
+          </div>
+        )}
+
+        <button
+          onClick={handleLogout}
+          className="w-full bg-red-500 text-white py-3 rounded-lg font-semibold hover:bg-red-600 transition"
+        >
+          Log Out
+        </button>
 
         <div>
-          <h3 className="text-lg font-semibold mt-4 mb-2">🍽️ Meals You've Posted</h3>
-          {meals.length > 0 ? (
-            <ul className="space-y-2">
-              {meals.map((meal) => (
-                <li key={meal.id} className="border p-3 rounded-lg bg-gray-50">
-                  <strong>{meal.title}</strong> – {meal.description}
-                </li>
+          <h3 className="text-xl font-semibold text-gray-700 mt-6 mb-2">Meals You've Posted</h3>
+          {mealsPosted.length > 0 ? (
+            <ul className="list-disc ml-6 space-y-1">
+              {mealsPosted.map((meal) => (
+                <li key={meal.id}>{meal.title}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">You haven't posted any meals yet.</p>
+            <p className="text-gray-600">No meals posted yet.</p>
           )}
         </div>
 
         <div>
-          <h3 className="text-lg font-semibold mt-4 mb-2">🤝 Meals You've Requested</h3>
-          {requests.length > 0 ? (
-            <ul className="space-y-2">
-              {requests.map((req, index) => (
-                <li key={index} className="border p-3 rounded-lg bg-gray-50">
-                  <strong>Meal ID:</strong> {req.mealId}
-                </li>
+          <h3 className="text-xl font-semibold text-gray-700 mt-6 mb-2">Meals You've Requested</h3>
+          {mealsRequested.length > 0 ? (
+            <ul className="list-disc ml-6 space-y-1">
+              {mealsRequested.map((req) => (
+                <li key={req.id}>Meal ID: {req.mealId}</li>
               ))}
             </ul>
           ) : (
-            <p className="text-gray-500">You haven't requested any meals yet.</p>
+            <p className="text-gray-600">No meals requested yet.</p>
           )}
         </div>
       </div>
