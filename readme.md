@@ -1,4 +1,4 @@
-# 🍽️ PlateMate – Share Food, Share Kindness
+# 🍽️ PlateMate – One Meal Saved, One Meal Served.
 
 PlateMate isn't something fancy.  
 Neither is it just another food waste management tool.  
